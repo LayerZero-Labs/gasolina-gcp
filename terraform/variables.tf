@@ -36,6 +36,11 @@ variable "app_name" {
   description = "The name of the app e.g. gasolina-api. This will be used for all roles and service accounts. Only letters numbers and hyphens '-'."
 }
 
+variable "gasolina_ver" {
+  type = string
+  description = "Version of gasolina to deploy"
+}
+
 variable "num_signers" {
   type = string
   description = "The number of signers in the GCP project."

@@ -22,5 +22,6 @@ num_signers = 1
  * App variables
  * ------------------------ */
 app_name = "gasolina-api"
+gasolina_ver = "1.0.0"                        // Edit: Gasolina version to deploy
 // Edit: the chain names that gasolina will support and there are RPC providers for
 available_chain_names = "ethereum,bsc,avalanche,polygon,arbitrum,optimism,fantom"

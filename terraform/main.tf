@@ -178,7 +178,7 @@ resource "google_cloud_run_service" "gasolina_api" {
       service_account_name = "gasolina-api@${var.project}.iam.gserviceaccount.com"
 
       containers {
-        image = "${var.region}-docker.pkg.dev/${var.project}/gasolina-api-${var.env}/gasolina-api-image"
+        image = "${var.region}-docker.pkg.dev/${var.project}/gasolina-api-${var.env}/gasolina-api-image:${var.gasolina_ver}"
 
         resources {
           limits = {
