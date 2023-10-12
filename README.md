@@ -5,11 +5,8 @@
 This repository provides Infrastructure-As-Code (IAC) for installing Gasolina on GCP via Terraform.
 
 ## Step-by-step instructions on setting up the infrastructure and deploying the Gasolina application
-Steps 1-5 are all one time configuration steps.
-Step 6 is the actual infrastructure setup and application deployment.
-Step 7 is for testing.
 
-### 1. Setting up the project, installing gcloud and terraform
+### 1. Set up the project, install gcloud and terraform
 - Go to: https://console.cloud.google.com and set up a project
 - Go to: https://console.cloud.google.com/billing and create a GCP billing account
 - Attach your billing account to your project
@@ -20,18 +17,33 @@ Step 7 is for testing.
 
 ```shell
 gcloud config set project <gcp_project_name>
-gcloud auth application-default login
 ```
 
-### 3. Create GCS bucket to store Terraform backend
+### 3. Enable Google CloudRun API and create a CloudRun service agent with gcloud
+This is a one time manual step. The CloudRun service agent will allow terraform to deploy the gasolina-api to CloudRun.
+
+Enable Google CloudRun API and create a CloudRun service agent with gcloud:
+```shell
+gcloud services enable run.googleapis.com
+gcloud beta services identity create --service=run.googleapis.com --project=<gcp_project_name>
+```
+
+If successful you should see this message:
+```txt
+Service identity created: service-1011072802078@serverless-robot-prod.iam.gserviceaccount.com
+```
+
+**Send this Service Agent over to LayerZeroLabs team for them to grant access to pull the image from the Gasolina Artifact Registry**
+
+### 4. Create GCS bucket to store Terraform backend
 Create a GCS bucket to store the Terraform backend state. The `gcp_bucket_name` is unique across all GCP projects.
-A good naming convention would be `<project>-lz-<environment>-verifier_gasolina-terraform-state` e.g. foobar-lz-mainnet-verifier_gasolina-terraform-state
+A good naming convention would be `<project>-<environment>-gasolina-tfstate`.
 
 ```shell
 gcloud storage buckets create gs://<gcp_bucket_name> --project=<gcp_project_name> --location=<location e.g. US-EAST1>
 ```
 
-### 4. Modify the backend config and tfvars files
+### 5. Modify the backend config and tfvars files
 Configure your backend config with bucket and environment in `terraform/lz-<environment>-verifier.backend.conf`. 
 
 In `terraform/lz-<environment>-verifier.backend.conf`:
@@ -73,12 +85,12 @@ app_name = "gasolina-api"
 available_chain_names = "ethereum,bsc,avalanche,polygon,arbitrum,optimism,fantom"
 ```
 
-### 5. Add your RPC providers to providers-<env>.json
+### 6. Add your RPC providers to providers-<env>.json
 There are public RPCs that are meant for testing/examples in providers-mainnet.json. These are not recommended
 to be used in production. You can add your own providers to the file. The URIs are ordered by priority where the first
 is prioritized before the next uri to be used for fallback.
 
-### 6. Run Terraform to create the infrastructure and deploy gasolina
+### 7. Run Terraform to create the infrastructure and deploy gasolina
 
 ```shell
 # change directory to terraform/
@@ -89,20 +101,20 @@ gcloud config set project <gcp_project_name>
 gcloud auth application-default login
 
 # init backend
-terraform init -backend-config=lz-<environment>-verifier.backend.conf -reconfigure
+terraform init -backend-config=<backend_file>.backend.conf -reconfigure
 
 # review the plan before applying
-terraform plan --var-file=<environment>.tfvars
+terraform plan --var-file=<tfvars_file>.tfvars
 
 # If plan is correct, apply the plan
-terraform apply --var-file=<environment>.tfvars
+terraform apply --var-file=<tfvars_file>.tfvars
 ```
 
 If everything is successful, you should have a running gasolina-api deployed to Google Cloud Run.
 
-### 7. Test the gasolina-api
+### 8. Test the gasolina-api
 1. Send a GET request to your gasolina-api cloud run URL: https://<gcp_cloud_run_host>.a.run.app and it should return `HEALTHY`
-2. Send a GET request to the signer-info endpoint and it will return to you the list of signers created in KMS-HSM `https://<<gcp_cloud_run_host>.a.run.app/signer-info?chainName=<chainName>`
+2. Send a GET request to the signer-info endpoint, and it will return to you the list of signers created in KMS-HSM `https://<<gcp_cloud_run_host>.a.run.app/signer-info?chainName=<chainName>`
 
 ## Troubleshooting
 

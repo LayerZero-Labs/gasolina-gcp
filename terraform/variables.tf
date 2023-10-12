@@ -8,7 +8,7 @@ variable "project" {
 
 variable "project_id" {
   type = string
-  description = "The gcp project id"
+  description = "The gcp project id number"
 }
 
 variable "region" {
@@ -36,7 +36,12 @@ variable "app_name" {
   description = "The name of the app e.g. gasolina-api. This will be used for all roles and service accounts. Only letters numbers and hyphens '-'."
 }
 
-variable "gasolina_ver" {
+variable "app_image_uri" {
+  type = string
+  description = "The uri of the docker image to deploy without the tag"
+}
+
+variable "app_version" {
   type = string
   description = "Version of gasolina to deploy"
 }

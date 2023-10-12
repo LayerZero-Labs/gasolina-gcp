@@ -46,37 +46,12 @@ resource "google_service_account" "app-service-account" {
   depends_on = [module.enabled_google_apis.project_id]
 }
 
-// CUSTOM ROLES
+// Service account for Gasolina API
 resource "google_project_iam_custom_role" "app-role" {
   role_id     = "${replace(var.app_name, "-", "_")}_role"
   title       = "${var.app_name} Role"
   description = "Restrictive access to secret for service account"
   permissions = ["secretmanager.versions.access"]
-
-  depends_on = [module.enabled_google_apis.project_id]
-}
-
-resource "google_project_iam_custom_role" "cloudbuild-role" {
-  role_id     = "${replace(var.app_name, "-", "_")}_cb_role"
-  title       = "${var.app_name} Cloud Build Role"
-  description = "Restrictive access to cloud run"
-  permissions = [
-    "artifactregistry.repositories.uploadArtifacts",
-    "iam.serviceAccounts.actAs",
-    "logging.logEntries.create",
-    "pubsub.topics.publish",
-    "resourcemanager.projects.get",
-    "run.services.create",
-    "run.services.update",
-    "run.services.get",
-    "run.routes.invoke",
-    "run.services.getIamPolicy",
-    "run.services.setIamPolicy", // to make the run service public accessible
-    "source.repos.get",
-    "source.repos.list",
-    "storage.objects.get",
-    "storage.objects.list",
-  ]
 
   depends_on = [module.enabled_google_apis.project_id]
 }
@@ -89,25 +64,7 @@ resource "google_project_iam_member" "app-role-binding" {
   depends_on = [module.enabled_google_apis.project_id]
 }
 
-// should fetch this from data
-resource "google_project_iam_member" "cloudbuild-role-binding" {
-  project = var.project
-  role    = "projects/${var.project}/roles/${google_project_iam_custom_role.cloudbuild-role.role_id}"
-  member  = "serviceAccount:${data.google_project.project.number}@cloudbuild.gserviceaccount.com"
-
-  depends_on = [module.enabled_google_apis.project_id]
-}
-
-// create artifact registry
-resource "google_artifact_registry_repository" "artifact-registry-repo" {
-  location      = var.region
-  repository_id = "${var.app_name}-${var.env}"
-  description   = "Artifacts for ${var.app_name}"
-  format        = "DOCKER"
-
-  depends_on = [module.enabled_google_apis.project_id]
-}
-
+// HSM-KMS setup for signers
 resource "google_kms_key_ring" "gasolina_key_ring" {
   name       = "gasolinaKeyRing"
   location   = "global"
@@ -144,6 +101,7 @@ resource "google_kms_crypto_key_iam_binding" "crypto_key" {
   depends_on = [module.enabled_google_apis.project_id]
 }
 
+// GCS setup for provider configs
 resource "google_storage_bucket" "providerconfigs_bucket" {
   name     = "providerconfigs-${var.project}"
   location = var.region
@@ -169,6 +127,7 @@ resource "google_storage_bucket_iam_binding" "providerconfigs_object_binding" {
   depends_on = [module.enabled_google_apis.project_id]
 }
 
+// Gasolina Cloud Run deployment
 resource "google_cloud_run_service" "gasolina_api" {
   name     = "gasolina-api"
   location = var.region
@@ -178,7 +137,7 @@ resource "google_cloud_run_service" "gasolina_api" {
       service_account_name = "gasolina-api@${var.project}.iam.gserviceaccount.com"
 
       containers {
-        image = "${var.region}-docker.pkg.dev/${var.project}/gasolina-api-${var.env}/gasolina-api-image:${var.gasolina_ver}"
+        image = "${var.app_image_uri}:${var.app_version}"
 
         resources {
           limits = {
@@ -250,7 +209,10 @@ resource "google_cloud_run_service" "gasolina_api" {
     }
   }
 
-  depends_on = [module.enabled_google_apis.project_id]
+  depends_on = [
+    module.enabled_google_apis.project_id,
+    google_project_iam_custom_role.app-role
+  ]
 }
 
 data "google_iam_policy" "noauth" {
