@@ -115,6 +115,27 @@ If everything is successful, you should have a running gasolina-api deployed to 
 ### 8. Test the gasolina-api
 1. Send a GET request to your gasolina-api cloud run URL: https://<gcp_cloud_run_host>.a.run.app and it should return `HEALTHY`
 2. Send a GET request to the signer-info endpoint, and it will return to you the list of signers created in KMS-HSM `https://<<gcp_cloud_run_host>.a.run.app/signer-info?chainName=<chainName>`
+3. To test the API against a sample message, in the root directory run:
+```bash
+ts-node scripts/testDeployment -u <URL> -e <environment>
+```
+- A successful response will look like:
+```bash
+--- [200] Successful request ---
+Response: {
+  signatures: [
+    {
+      signature: '<signature>',
+      address: '<address>'
+    },
+    {
+      signature: '<signature>',
+      address: '<address>'
+    }
+  ]
+}
+
+```
 
 ## Troubleshooting
 
