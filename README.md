@@ -7,11 +7,12 @@ This repository provides Infrastructure-As-Code (IAC) for installing Gasolina on
 ## Step-by-step instructions on setting up the infrastructure and deploying the Gasolina application
 
 ### 1. Set up the project, install gcloud and terraform
-- Go to: https://console.cloud.google.com and set up a project
-- Go to: https://console.cloud.google.com/billing and create a GCP billing account
-- Attach your billing account to your project
-- Install gcloud cli: https://cloud.google.com/sdk/docs/install
-- Install terraform cli: https://developer.hashicorp.com/terraform/tutorials/aws-get-started/install-cli
+
+-   Go to: https://console.cloud.google.com and set up a project
+-   Go to: https://console.cloud.google.com/billing and create a GCP billing account
+-   Attach your billing account to your project
+-   Install gcloud cli: https://cloud.google.com/sdk/docs/install
+-   Install terraform cli: https://developer.hashicorp.com/terraform/tutorials/aws-get-started/install-cli
 
 ### 2. Authenticate gcloud cli with your GCP account
 
@@ -19,23 +20,8 @@ This repository provides Infrastructure-As-Code (IAC) for installing Gasolina on
 gcloud config set project <gcp_project_name>
 ```
 
-### 3. Enable Google CloudRun API and create a CloudRun service agent with gcloud
-This is a one time manual step. The CloudRun service agent will allow terraform to deploy the gasolina-api to CloudRun.
+### 3. Create GCS bucket to store Terraform backend
 
-Enable Google CloudRun API and create a CloudRun service agent with gcloud:
-```shell
-gcloud services enable run.googleapis.com
-gcloud beta services identity create --service=run.googleapis.com --project=<gcp_project_name>
-```
-
-If successful you should see this message:
-```txt
-Service identity created: service-1011072802078@serverless-robot-prod.iam.gserviceaccount.com
-```
-
-**Send this Service Agent over to LayerZeroLabs team for them to grant access to pull the image from the Gasolina Artifact Registry**
-
-### 4. Create GCS bucket to store Terraform backend
 Create a GCS bucket to store the Terraform backend state. The `gcp_bucket_name` is unique across all GCP projects.
 A good naming convention would be `<project>-<environment>-gasolina-tfstate`.
 
@@ -43,10 +29,12 @@ A good naming convention would be `<project>-<environment>-gasolina-tfstate`.
 gcloud storage buckets create gs://<gcp_bucket_name> --project=<gcp_project_name> --location=<location e.g. US-EAST1>
 ```
 
-### 5. Modify the backend config and tfvars files
-Configure your backend config with bucket and environment in `terraform/lz-<environment>-verifier.backend.conf`. 
+### 4. Modify the backend config and tfvars files
+
+Configure your backend config with bucket and environment in `terraform/lz-<environment>-verifier.backend.conf`.
 
 In `terraform/lz-<environment>-verifier.backend.conf`:
+
 ```conf
 # Use the <gcp_bucket_name> you created in the previous step
 bucket = "foobar-lz-mainnet-verifier_gasolina-terraform-state"
@@ -56,6 +44,7 @@ prefix = "mainnet"
 
 In `terraform/lz-<environment>-verifier.tfvars`:
 Edit all the values that has an Edit comment to it
+
 ```tfvars
 /* ------------------------
  * Project variables
@@ -85,12 +74,13 @@ app_name = "gasolina-api"
 available_chain_names = "ethereum,bsc,avalanche,polygon,arbitrum,optimism,fantom"
 ```
 
-### 6. Add your RPC providers to providers-<env>.json
+### 5. Add your RPC providers to providers-<env>.json
+
 There are public RPCs that are meant for testing/examples in providers-mainnet.json. These are not recommended
 to be used in production. You can add your own providers to the file. The URIs are ordered by priority where the first
 is prioritized before the next uri to be used for fallback.
 
-### 7. Run Terraform to create the infrastructure and deploy gasolina
+### 6. Run Terraform to create the infrastructure and deploy gasolina
 
 ```shell
 # change directory to terraform/
@@ -113,13 +103,17 @@ terraform apply --var-file=<tfvars_file>.tfvars
 If everything is successful, you should have a running gasolina-api deployed to Google Cloud Run.
 
 ### 8. Test the gasolina-api
+
 1. Send a GET request to your gasolina-api cloud run URL: https://<gcp_cloud_run_host>.a.run.app and it should return `HEALTHY`
 2. Send a GET request to the signer-info endpoint, and it will return to you the list of signers created in KMS-HSM `https://<<gcp_cloud_run_host>.a.run.app/signer-info?chainName=<chainName>`
 3. To test the API against a sample message, in the root directory run:
+
 ```bash
 ts-node scripts/testDeployment -u <URL> -e <environment>
 ```
-- A successful response will look like:
+
+-   A successful response will look like:
+
 ```bash
 --- [200] Successful request ---
 Response: {
@@ -140,8 +134,9 @@ Response: {
 ## Troubleshooting
 
 ### 1. Error creating KeyRing
+
 Note, you may run into a known GCP/Terraform issue where the backing services have been enabled in a fresh account, but
-are not yet available for use.  This will manifest in something similar to the following:
+are not yet available for use. This will manifest in something similar to the following:
 
 ```text
 │ Error: Error creating KeyRing: googleapi: Error 403: Google Cloud KMS API has not been used in project <gcp_project_id> before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/cloudkms.googleapis.com/overview?project=<gcp_project_id> then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.
