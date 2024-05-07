@@ -66,7 +66,7 @@ resource "google_project_iam_member" "app-role-binding" {
 
 // HSM-KMS setup for signers
 resource "google_kms_key_ring" "gasolina_key_ring" {
-  name       = "gasolinaKeyRing"
+  name       = var.kms_key_ring
   location   = "global"
 
   depends_on = [module.enabled_google_apis.project_id]
@@ -179,7 +179,7 @@ resource "google_cloud_run_service" "gasolina_api" {
         }
         env {
           name  = "GCP_KEY_RING_ID"
-          value = "gasolinaKeyRing"
+          value = var.kms_key_ring
         }
         env {
           name  = "LAYERZERO_SUPPORTED_ULN_VERSIONS"

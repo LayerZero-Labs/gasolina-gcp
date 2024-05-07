@@ -56,3 +56,9 @@ variable "available_chain_names" {
   type = string
   description = "Comma separated list of chain names that gasolina will support e.g. ethereum,bsc,avalanche,polygon"
 }
+
+variable "kms_key_ring" {
+  type = string
+  description = "The name of the key ring to create in KMS"
+}
+
