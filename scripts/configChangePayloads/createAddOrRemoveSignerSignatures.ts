@@ -9,11 +9,11 @@ import { getChainIdForNetwork } from '@layerzerolabs/lz-definitions'
 import { GcpKmsKey } from './kms'
 
 const PATH = path.join(__dirname)
-const FILE_PATH = `${PATH}/quorum-change-payloads.json`
+const FILE_PATH = `${PATH}/signer-change-payloads.json`
 
 /**
  * This script creates signature payloads to be submitted by an Admin of the DVN contract
- * that will change the quorum of the DVN contract
+ * that will add or remove a singer from the DVN contract
  */
 
 const args = parse({
@@ -28,24 +28,29 @@ const args = parse({
         type: String,
         description: 'comma separated list of chain names',
     },
-    oldQuorum: {
+    quorum: {
         type: Number,
-        description:
-            'old quorum, which is number of signatures required for change to happen',
+        alias: 'q',
+        description: 'number of signatures required for quorum',
     },
-    newQuorum: {
-        type: Number,
-        description: 'new quorum',
+    signerAddress: {
+        type: String,
+        description: 'public address of the signer',
+    },
+    shouldRevoke: {
+        type: Number, // Not a boolean to make it required in the command line, so users be explicit about it
+        description:
+            'set to 1 if you want to remove signer, set to 0 if you want to add signer',
     },
 })
 
-const setQuorumFunctionSig = 'function setQuorum(uint64 _quorum)'
+const setSignerFunctionSig = 'function setSigner(address _signer, bool _active)'
 const EXPIRATION = Date.now() + 7 * 24 * 60 * 60 * 1000 // 1 week expiration from now
 
-const iface = new ethers.utils.Interface([setQuorumFunctionSig])
+const iface = new ethers.utils.Interface([setSignerFunctionSig])
 
-const getCallData = (newQuorum: number) => {
-    return iface.encodeFunctionData('setQuorum', [newQuorum])
+const getCallData = (signerAddress: string, active: boolean) => {
+    return iface.encodeFunctionData('setSigner', [signerAddress, active])
 }
 
 const hashCallData = (target: string, callData: string, vId: string) => {
@@ -63,7 +68,11 @@ interface Signature {
 }
 
 const main = async () => {
-    const { environment, chainNames, oldQuorum, newQuorum } = args
+    const { environment, chainNames, quorum, signerAddress, shouldRevoke } =
+        args
+    if (shouldRevoke !== 0 && shouldRevoke !== 1) {
+        throw new Error('shouldRevoke must be 0 or 1')
+    }
     const dvnAddresses = require(`./data/dvn-addresses-${environment}.json`)
     const keyIds = require(`./data/kms-keyids-${environment}.json`)
     const signers = await Promise.all(
@@ -78,7 +87,10 @@ const main = async () => {
         availableChainNames.map(async (chainName) => {
             results[chainName] = results[chainName] || {}
             const vId = getChainIdForNetwork(chainName, environment, '2')
-            const callData = getCallData(newQuorum)
+            const callData = getCallData(
+                signerAddress,
+                shouldRevoke === 1 ? false : true,
+            )
             const hash = hashCallData(dvnAddresses[chainName], callData, vId)
             // sign
             const signatures = await Promise.all(
@@ -93,7 +105,7 @@ const main = async () => {
             signatures.sort((a: Signature, b: Signature) =>
                 a.address.localeCompare(b.address),
             )
-            const signaturesForQuorum = signatures.slice(0, oldQuorum)
+            const signaturesForQuorum = signatures.slice(0, quorum)
             const signaturePayload = ethers.utils.solidityPack(
                 signaturesForQuorum.map(() => 'bytes'),
                 signaturesForQuorum.map((s: Signature) => s.signature),
@@ -110,8 +122,9 @@ const main = async () => {
                 info: {
                     signatures,
                     hashCallData: hash,
-                    oldQuorum,
-                    newQuorum,
+                    quorum,
+                    signerAddress,
+                    shouldRevoke: shouldRevoke === 1,
                 },
             }
         }),

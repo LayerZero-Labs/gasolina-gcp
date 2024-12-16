@@ -8,11 +8,3 @@ export interface GcpKmsKey {
     keyId: string
     keyVersion: string
 }
-
-/**
- * Utility to parse GCP KMS Keys from a file.
- * @param {string} input
- */
-export const parseKmsKeyIds = (input: string): GcpKmsKey[] => {
-    return JSON.parse(input) as GcpKmsKey[]
-}
