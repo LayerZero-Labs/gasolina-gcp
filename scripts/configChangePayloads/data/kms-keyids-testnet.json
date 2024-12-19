@@ -1,0 +1,16 @@
+[
+    {
+        "projectId": "gasolina-gcp-test",
+        "locationId": "global",
+        "keyRingId": "gasolinaKeyRing",
+        "keyId": "gasolinaKey1",
+        "keyVersion": "1"
+    },
+    {
+        "projectId": "gasolina-gcp-test",
+        "locationId": "global",
+        "keyRingId": "gasolinaKeyRing",
+        "keyId": "gasolinaKey2",
+        "keyVersion": "1"
+    }
+]
