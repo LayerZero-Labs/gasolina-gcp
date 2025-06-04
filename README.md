@@ -109,7 +109,7 @@ If everything is successful, you should have a running gasolina-api deployed to 
 3. To test the API against a sample message, in the root directory run:
 
 ```bash
-ts-node scripts/testDeployment -u <URL> -e <environment>
+ts-node scripts/testDeployment.ts -u <URL> -e <environment>
 ```
 
 -   A successful response will look like:
