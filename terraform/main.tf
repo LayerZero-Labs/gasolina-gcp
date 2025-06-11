@@ -132,6 +132,12 @@ resource "google_cloud_run_service" "gasolina_api" {
   name     = "gasolina-api"
   location = var.region
 
+  metadata {
+    annotations = {
+      "run.googleapis.com/invoker-iam-disabled" = "true"
+    }
+  }
+
   template {
     spec {
       service_account_name = "gasolina-api@${var.project}.iam.gserviceaccount.com"
@@ -209,30 +215,14 @@ resource "google_cloud_run_service" "gasolina_api" {
     }
   }
 
+  lifecycle {
+    ignore_changes = [
+      metadata[0].annotations["run.googleapis.com/urls"]
+    ]
+  }
+
   depends_on = [
     module.enabled_google_apis.project_id,
     google_project_iam_custom_role.app-role
-  ]
-}
-
-data "google_iam_policy" "noauth" {
-  binding {
-    role = "roles/run.invoker"
-    members = [
-      "allUsers",
-    ]
-  }
-}
-
-resource "google_cloud_run_service_iam_policy" "noauth" {
-  location    = google_cloud_run_service.gasolina_api.location
-  project     = google_cloud_run_service.gasolina_api.project
-  service     = google_cloud_run_service.gasolina_api.name
-
-  policy_data = data.google_iam_policy.noauth.policy_data
-
-  depends_on = [
-    module.enabled_google_apis.project_id,
-    google_cloud_run_service.gasolina_api
   ]
 }
