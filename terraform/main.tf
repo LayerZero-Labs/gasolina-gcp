@@ -105,6 +105,7 @@ resource "google_kms_crypto_key_iam_binding" "crypto_key" {
 resource "google_storage_bucket" "providerconfigs_bucket" {
   name     = "providerconfigs-${var.project}"
   location = var.region
+  uniform_bucket_level_access = true
   force_destroy = false
 
   depends_on = [module.enabled_google_apis.project_id]
