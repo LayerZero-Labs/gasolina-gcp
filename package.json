@@ -13,6 +13,9 @@
         "deploy": "cdk deploy",
         "watch": "tsc -w"
     },
+    "resolutions": {
+        "jws": "4.0.1"
+    },
     "dependencies": {
         "@layerzerolabs/lz-definitions": "^3.0.123",
         "@layerzerolabs/lz-solana-sdk-v2": "3.0.123",
