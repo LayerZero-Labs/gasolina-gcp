@@ -14,7 +14,9 @@
         "watch": "tsc -w"
     },
     "resolutions": {
-        "jws": "4.0.1"
+        "jws": "4.0.1",
+        "elliptic": "^6.6.1",
+        "protobufjs": "^7.2.5"
     },
     "dependencies": {
         "@layerzerolabs/lz-definitions": "^3.0.123",
