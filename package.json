@@ -18,7 +18,8 @@
         "elliptic": "^6.6.1",
         "protobufjs": "^7.2.5",
         "bip32": "5.0.1",
-        "ws": "^7.5.10"
+        "ws": "^7.5.10",
+        "node-forge": "^1.4.0"
     },
     "dependencies": {
         "@layerzerolabs/lz-definitions": "^3.0.123",
